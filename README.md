@@ -1,1 +1,1 @@
-# AAIML
+This code creates a simple GUI that changes the font size of a label when a user blinks. It uses OpenCV to detect blinks through the webcam, and each blink triggers an increase in the font size of the text shown in the Tkinter window, cycling between sizes.
