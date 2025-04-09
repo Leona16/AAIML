@@ -5,26 +5,29 @@ import tkinter as tk
 from imutils import face_utils
 from threading import Thread
 from scipy.spatial import distance
+import time
 
-
+# GUI setup
 root = tk.Tk()
 root.title("Blink-Controlled Font Size")
 font_size = 20
-label = tk.Label(root, text="Blink to change font size!", font=("Helvetica", font_size))
+label = tk.Label(root, text="Hey! Have a great Day!", font=("Helvetica", font_size))
 label.pack(padx=20, pady=20)
 
 # EAR threshold and frame settings
 EAR_THRESHOLD = 0.25
 CONSEC_FRAMES = 3
 
-
+# Load models
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
 (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
 
+# Counters and flags
 blink_counter = 0
 frames = 0
+last_blink_time = 0
 
 def eye_aspect_ratio(eye):
     A = distance.euclidean(eye[1], eye[5])
@@ -38,10 +41,12 @@ def update_font():
     if font_size > 40:
         font_size = 20
     label.config(font=("Helvetica", font_size))
+    label.update_idletasks()
 
 def blink_detector():
-    global blink_counter, frames
+    global blink_counter, frames, last_blink_time
     cap = cv2.VideoCapture(0)
+
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -64,9 +69,15 @@ def blink_detector():
                 frames += 1
             else:
                 if frames >= CONSEC_FRAMES:
-                    blink_counter += 1
-                    print(f"Blink #{blink_counter}")
-                    update_font()
+                    current_time = time.time()
+                    # Check for double blink within 1.5 seconds
+                    if current_time - last_blink_time < 1.5:
+                        blink_counter += 1
+                        print(f"Double Blink #{blink_counter}")
+                        update_font()
+                        last_blink_time = 0  # reset to avoid triple blink
+                    else:
+                        last_blink_time = current_time
                 frames = 0
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
